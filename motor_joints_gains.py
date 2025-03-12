@@ -2,6 +2,8 @@ import numpy as np
 from enum import Enum
 import math
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+# import mplcursors to hove over a curve in a plot to display values.Doesn't seem to work with 3 axis plots
 
 # Plot Kp/v(j) as funcion of joint positions
 
@@ -45,7 +47,7 @@ def kr001_angle_to_cylinder_gimbal(GimbalMethod, qr, qp, LT, LC, L1Y, L1Z, L2X, 
 
     # Left Cylinder
 
-    if GimbalMethod == 1: #ROLL_PITCH
+    if GimbalMethod.value == 1: #ROLL_PITCH
         # |  cos(qp)  0   sin(qp) |   |  1,        0,        0 |   | -L2X |
         # |        0  1        0  | * |  0,  cos(qr), -sin(qr) | * | -L2Y |
         # | -sin(qp)  0   cos(qp) |   |  0,  sin(qr),  cos(qr) |   |  L2Z |
@@ -53,7 +55,7 @@ def kr001_angle_to_cylinder_gimbal(GimbalMethod, qr, qp, LT, LC, L1Y, L1Z, L2X, 
        phx = -cqpL2X + sqp * cqrL2Z_sqrL2Y
        phy = -cqrL2Y - sqrL2Z
        phz =  sqpL2X + cqp * cqrL2Z_sqrL2Y
-    elif GimbalMethod == 0: #PITCH_ROLL
+    elif GimbalMethod.value == 0: #PITCH_ROLL
         # |  1,        0,        0 |   |  cos(qp)  0   sin(qp) |   | -L2X |
         # |  0,  cos(qr), -sin(qr) | * |        0  1        0  | * | -L2Y |
         # |  0,  sin(qr),  cos(qr) |   | -sin(qp)  0   cos(qp) |   |  L2Z |      
@@ -85,7 +87,7 @@ def kr001_angle_to_cylinder_gimbal(GimbalMethod, qr, qp, LT, LC, L1Y, L1Z, L2X, 
     leftLength = math.sqrt(daLdb)
 
     # Right Cylinder
-    if GimbalMethod == 1: #ROLL_PITCH
+    if GimbalMethod.value == 1: #ROLL_PITCH
         # |  cos(qp)  0   sin(qp) |   |  1,        0,        0 |   | -L2X |
         # |        0  1        0  | * |  0,  cos(qr), -sin(qr) | * | +L2Y |
         # | -sin(qp)  0   cos(qp) |   |  0,  sin(qr),  cos(qr) |   |  L2Z |
@@ -93,7 +95,7 @@ def kr001_angle_to_cylinder_gimbal(GimbalMethod, qr, qp, LT, LC, L1Y, L1Z, L2X, 
        phx = -cqpL2X + sqp * cqrL2Z_sqrL2Y
        phy = cqrL2Y - sqrL2Z
        phz =  sqpL2X + cqp * cqrL2Z_sqrL2Y
-    elif GimbalMethod == 0: #PITCH_ROLL
+    elif GimbalMethod.value == 0: #PITCH_ROLL
         # |  1,        0,        0 |   |  cos(qp)  0   sin(qp) |   | -L2X |
         # |  0,  cos(qr), -sin(qr) | * |        0  1        0  | * | -L2Y |
         # |  0,  sin(qr),  cos(qr) |   | -sin(qp)  0   cos(qp) |   |  L2Z |      
@@ -297,7 +299,7 @@ def Motor_to_Joint_Dgains_Knee(Kv_m, J, Km):
 # Implementing Kp_j*qj = Jj^-T * Km * Kp_m * qm
 # Use kr001_cylinder_to_angle_gimbal, the cylinder lengths are the qm, while the qr and qp are joint positions.
 
-def Motor_to_Joint_Pgains_Knee( Kp_m,  j,  Km, angle, cylinder_position):
+def Motor_to_Joint_Pgains_Knee(Kp_m,  j,  Km, angle, cylinder_position):
 
   Kp_j = 1/j * Km * Kp_m * cylinder_position * 1/angle
 
@@ -305,79 +307,209 @@ def Motor_to_Joint_Pgains_Knee( Kp_m,  j,  Km, angle, cylinder_position):
 
 ##################################### Main #####################################
 
-# Knee P
+# # Knee P
 
-#Suppose you have arrays Kp and Kd containing the PD gains of the motor level
+# # Suppose you have arrays Kp and Kd containing the PD gains of the motor level
 
-Kp_m_knee = 3.5
-Kv_m_knee = 0.0003
+# Kp_m_knee = 3.5
+# Kv_m_knee = 0.0003
 
-# Km for knee
-Km_knee = 1000.0 * 2 * math.pi * 2 * 0.36
+# # Km for knee
+# Km_knee = 1000.0 * 2 * math.pi * 2 * 0.36
 
-# cross knee settings
-KNEE_P_A1 = np.array([0.0290, -0.0450]) #[m]
-KNEE_P_A2 = np.array([0.0500,  0.0710]) #[m]
-KNEE_P_B1 = np.array([0.0000, -0.0590]) #[m]
-KNEE_P_B2 = np.array([0.0270,  0.0000]) #[m]
-KNEE_P_C = np.array([0.0500,  0.2650]) #[m]
-KNEE_P_INIT_LEN = 0.1941 #[m]
-KNEE_P_MIN_LEN  = 0.1940 #[m]
-KNEE_P_MAX_LEN  = 0.346398 #[m]
+# # cross knee settings
+# KNEE_P_A1 = np.array([0.0290, -0.0450]) #[m]
+# KNEE_P_A2 = np.array([0.0500,  0.0710]) #[m]
+# KNEE_P_B1 = np.array([0.0000, -0.0590]) #[m]
+# KNEE_P_B2 = np.array([0.0270,  0.0000]) #[m]
+# KNEE_P_C = np.array([0.0500,  0.2650]) #[m]
+# KNEE_P_INIT_LEN = 0.1941 #[m]
+# KNEE_P_MIN_LEN  = 0.1940 #[m]
+# KNEE_P_MAX_LEN  = 0.346398 #[m]
 
-# Joint range for the knee: 0<p<150, half-sitting is 36.0
+# # Joint range for the knee: 0<p<150, half-sitting is 36.0
 
-# Arrays for plotting:
+# # Arrays for plotting:
 
-joints_data = []
-Kp_knee_data = []
-Kv_knee_data = []
+# joints_data = []
+# Kp_knee_data = []
+# Kv_knee_data = []
 
-for i in np.arange(1.0, 150.0, 5.0):
+# for i in np.arange(1.0, 150.0, 5.0):
 
-    THP_knee = math.radians(i)
+#     THP_knee = math.radians(i)
 
-    #Cylinder position
-    length = angleToCylinderCrossKnee(THP_knee,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C,KNEE_P_INIT_LEN,KNEE_P_MIN_LEN,KNEE_P_MAX_LEN)
+#     #Cylinder position
+#     length = angleToCylinderCrossKnee(THP_knee,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C,KNEE_P_INIT_LEN,KNEE_P_MIN_LEN,KNEE_P_MAX_LEN)
 
-    #Jacobian
-    j_knee = cylinderToAngleCrossKneeDot(length,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C)
+#     #Jacobian
+#     j_knee = cylinderToAngleCrossKneeDot(length,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C)
 
-    # Calculating kp_j and Kv_j
-    Kp_j_knee = Motor_to_Joint_Pgains_Knee(Kp_m_knee, j_knee, Km_knee, THP_knee, length)
+#     # Calculating kp_j and Kv_j
+#     Kp_j_knee = Motor_to_Joint_Pgains_Knee(Kp_m_knee, j_knee, Km_knee, THP_knee, length)
 
-    Kv_j_knee = Motor_to_Joint_Dgains_Knee(Kv_m_knee, j_knee, Km_knee)
+#     Kv_j_knee = Motor_to_Joint_Dgains_Knee(Kv_m_knee, j_knee, Km_knee)
 
-    # print("Km:\n ", Km_knee)
-    # print("Jacobian:\n ", j_knee)
-    # print("Kv at the Knee P level:\n ", Kv_j_knee)
-    # print("Kp at the Knee P level:\n ", Kp_j_knee)
+#     # print("Km:\n ", Km_knee)
+#     # print("Jacobian:\n ", j_knee)
+#     # print("Kv at the Knee P level:\n ", Kv_j_knee)
+#     # print("Kp at the Knee P level:\n ", Kp_j_knee)
 
-    joints_data.append(i)
-    Kp_knee_data.append(Kp_j_knee)
-    Kv_knee_data.append(Kv_j_knee)
+#     joints_data.append(i)
+#     Kp_knee_data.append(Kp_j_knee)
+#     Kv_knee_data.append(Kv_j_knee)
+
+# # Plots
+
+# plt.figure()
+# plt.plot(joints_data, Kp_knee_data, label = "P gains knee_P", c = 'blue')
+# plt.scatter(joints_data, Kp_knee_data, label = "P gains knee_P", c = 'red')
+# plt.xlabel("Knee Joint Position")
+# plt.ylabel("kp_j_knee_P")
+# plt.title("knee P joint level P gains as function of knee P joint positions")
+# plt.legend()
+# plt.grid()
+
+# plt.figure()
+# plt.plot(joints_data, Kv_knee_data, label = "D gains knee_P", c = 'blue')
+# plt.scatter(joints_data, Kv_knee_data, label = "D gains knee_P", c = 'red')
+# plt.xlabel("Knee Joint Position")
+# plt.ylabel("kv_j_knee_P")
+# plt.title("knee P joint level D gains as function of knee P joint positions")
+# plt.legend()
+# plt.grid()
+# plt.show()
+
+
+#--------------------------------------------------------------------------------------------------------------------------------
+
+# Crotch P/R 
+
+# Defining Kv_m as a matrix
+
+Kv_m_crotch = [[0.0002, 0], [0, 0.0002]]
+
+# Km for crotch
+Km_crotch = np.array([[1000 * 2 * math.pi * 0.454545455, 0], [0 ,1000 * 2 * math.pi * 0.454545455]])
+
+# 15 double parameters: THR, THP, LT, LC, L1Y, L1Z, L2X, L2Y, L2Z, L3X, L3Z, LTxLT, LCxLC, LCx2, QOFF2
+
+# 股 P/R 
+
+gm_Crotch = GimbalMethod.ROLL_PITCH
+
+CROTCH_ROD_MIN_LENGTH     = 0.24157 
+CROTCH_ROD_MAX_LENGTH     = 0.35480 
+CROTCH_ROD_DEFAULT_LENGTH = 0.26838
+CROTCH_R_DEFAULT_ANGLE   = math.radians(0.0)
+CROTCH_P_DEFAULT_ANGLE   = math.radians(0.0) 
+
+CROTCH_LT  =  0.08000 
+CROTCH_LC  =  0.07000 
+CROTCH_L1Y =  0.04500
+CROTCH_L1Z =  0.05000
+CROTCH_L2X =  0.04924
+CROTCH_L2Y =  0.04500
+CROTCH_L2Z = -0.00868
+CROTCH_L3X =  0.00000
+CROTCH_L3Z =  0.30000
+CROTCH_QOFF2 =  math.radians(0.0)
+
+CROTCH_LTxLT = CROTCH_LT * CROTCH_LT
+CROTCH_LCxLC = CROTCH_LC * CROTCH_LC
+CROTCH_LCx2  = CROTCH_LC * 2.0
+
+# qp (pitch) and qr (roll), which should be used in the kr001_angle_to_cylinder_gimbal, which modifies drL and drR.
+# For the crotch: -110<p<30, -30<r<30
+# According to the AngleToCylinder.cpp code, qp is actually -pitch.
+
+crotch_roll_data = []
+crotch_pitch_data = []
+Kp_crotch_roll_data = []
+Kp_crotch_pitch_data = []
+Kv_crotch_roll_data = []
+Kv_crotch_pitch_data = []
+
+THR_crotch = math.radians(-30)
+
+for i in np.arange(-110.0, 30.01, 10.0):
+
+  qp = math.radians(i)
+  THP_crotch = -qp
+
+  leftlength_crotch, rightlength_crotch = kr001_angle_to_cylinder_gimbal(gm_Crotch, THR_crotch, THP_crotch,
+                                CROTCH_LT, CROTCH_LC, CROTCH_L1Y, CROTCH_L1Z,
+                                CROTCH_L2X, CROTCH_L2Y, CROTCH_L2Z, CROTCH_L3X, CROTCH_L3Z,
+                                CROTCH_LTxLT, CROTCH_LCxLC, CROTCH_LCx2, CROTCH_QOFF2)
+
+
+  InvJj_crotch = Jacobian_MotorTorque_CylinderForce(gm_Crotch,THR_crotch,THP_crotch,CROTCH_LT,CROTCH_LC,CROTCH_L1Y,CROTCH_L1Z,
+                                  CROTCH_L2X,CROTCH_L2Y,CROTCH_L2Z,CROTCH_L3X,CROTCH_L3Z,
+                                  CROTCH_LTxLT,CROTCH_LCxLC,CROTCH_LCx2,CROTCH_QOFF2)
+  
+
+  # Calculating kp_j and Kv_j
+
+  Kp_j_crotch = Motor_to_Joint_Pgains(InvJj_crotch, Km_crotch, THR_crotch, qp, leftlength_crotch, rightlength_crotch)
+  Kv_j_crotch = Motor_to_Joint_Dgains(Kv_m_crotch, InvJj_crotch, Km_crotch)
+
+  # cnt = 0
+  # for rows in Kv_j_crotch:
+  #  print(rows)
+  #  cnt+=1
+  #  if cnt%2 == 0:
+  #     print("")
+
+  crotch_pitch_data.append(i)
+  crotch_roll_data.append(math.degrees(THR_crotch))
+  Kp_crotch_roll_data.append(Kp_j_crotch[0])
+  Kp_crotch_pitch_data.append(Kp_j_crotch[1])
+  Kv_crotch_roll_data.append(Kv_j_crotch[0][0])
+  Kv_crotch_pitch_data.append(Kv_j_crotch[1][1])
+
+  THR_crotch = THR_crotch + math.radians(4)
+
+# print("Kp at the Crotch R level:\n ", Kp_crotch_roll_data)
+# print("Kp at the Crotch P level:\n ", Kp_crotch_pitch_data)
+# print("Kv at the Crotch R level:\n ", Kv_crotch_roll_data)
+# print("Kv at the Crotch P level:\n ", Kv_crotch_pitch_data)
 
 # Plots
 
-plt.figure()
-plt.plot(joints_data, Kp_knee_data, label = "P gains knee_P", c = 'blue')
-plt.scatter(joints_data, Kp_knee_data, label = "P gains knee_P", c = 'red')
-plt.xlabel("Knee Joint Position")
-plt.ylabel("kp_j_knee_P")
-plt.title("knee P joint level P gains as function of knee P joint positions")
-plt.legend()
-plt.grid()
+# Simple 2D plot
+# plt.figure()
+# plt.plot(crotch_pitch_data, Kp_crotch_pitch_data, label = "P gains crotch_P", c = 'blue')
+# plt.scatter(crotch_pitch_data, Kp_crotch_pitch_data, label = "P gains crotch_P", c = 'red')
+# plt.xlabel("Crotch_P Joint Position")
+# plt.ylabel("kp_j_crotch_P")
+# plt.title("Crotch_P joint level P gains as function of Crotch_P joint positions")
+# plt.legend()
+# plt.grid()
+# plt.show()
 
-plt.figure()
-plt.plot(joints_data, Kv_knee_data, label = "D gains knee_P", c = 'blue')
-plt.scatter(joints_data, Kv_knee_data, label = "D gains knee_P", c = 'red')
-plt.xlabel("Knee Joint Position")
-plt.ylabel("kv_j_knee_P")
-plt.title("knee P joint level D gains as function of knee P joint positions")
-plt.legend()
-plt.grid()
+fig1 = plt.figure()
+ax = fig1.add_subplot(111, projection = '3d')
+ax.scatter(np.array(crotch_pitch_data), np.array(crotch_roll_data), np.array(Kp_crotch_roll_data), c = 'orange', label = 'P gain for Crotch_R')
+ax.plot(np.array(crotch_pitch_data), np.array(crotch_roll_data), np.array(Kp_crotch_roll_data), c = 'brown', label = 'P gain for Crotch_R')
+ax.scatter(np.array(crotch_pitch_data), np.array(crotch_roll_data), np.array(Kp_crotch_pitch_data), c = 'red', label = 'P gain for Crotch_P')
+ax.plot(np.array(crotch_pitch_data), np.array(crotch_roll_data), np.array(Kp_crotch_pitch_data), c = 'blue', label = 'P gain for Crotch_P')
+ax.set_xlabel("Crotch_P Joint Position")
+ax.set_ylabel("Crotch_R Joint Position")
+ax.set_zlabel("kp_j_crotch")
+ax.set_title("Crotch_P joint level P gains as function of Crotch_P/R joint positions")
+ax.legend()
+ax.grid()
+
+fig2 = plt.figure()
+ax = fig2.add_subplot(111, projection = '3d')
+ax.scatter(np.array(crotch_pitch_data), np.array(crotch_roll_data), np.array(Kv_crotch_roll_data), c = 'orange', label = 'D gain for Crotch_R')
+ax.plot(np.array(crotch_pitch_data), np.array(crotch_roll_data), np.array(Kv_crotch_roll_data), c = 'brown', label = 'D gain for Crotch_R')
+ax.scatter(np.array(crotch_pitch_data), np.array(crotch_roll_data), np.array(Kv_crotch_pitch_data), c = 'red', label = 'D gain for Crotch_P')
+ax.plot(np.array(crotch_pitch_data), np.array(crotch_roll_data), np.array(Kv_crotch_pitch_data), c = 'blue', label = 'D gain for Crotch_P')
+ax.set_xlabel("Crotch_P Joint Position")
+ax.set_ylabel("Crotch_R Joint Position")
+ax.set_zlabel("Kv_j_crotch")
+ax.set_title("Crotch_P joint level P gains as function of Crotch_P/R joint positions")
+ax.legend()
+ax.grid()
 plt.show()
-
-
-
-
