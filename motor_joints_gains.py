@@ -224,7 +224,7 @@ def angleToCylinderCrossKnee(ang, a10, a20, b10, b20, c0, init_len, min_len, max
   for i in range(loop_num):
     tmp_len = tmp_len - (cylinderToAngleCrossKnee(tmp_len, a10, a20, b10, b20, c0) - ang) / cylinderToAngleCrossKneeDot(tmp_len, a10, a20, b10, b20, c0)
 
-    # Case when tmp_len is NaN,:
+    # Case when tmp_len is NaN:
     if math.isnan(tmp_len):  
         tmp_len = init_len + (i * delta)  
 
@@ -255,34 +255,36 @@ def Motor_to_Joint_Dgains(Kv_m, InvJj, Km):
   return Kv_j
 
 # Implementing Kp_j*qj = Jj^-T * Km * Kp_m * qm. This implementation is in vector form, not in Matrix form
-def Motor_to_Joint_Pgains(InvJj, Km, qr, qp, leftLength, rightLength):
+def Motor_to_Joint_Pgains(Kp_m, InvJj, Km, qr, qp, leftLength, rightLength):
 
- # Defining element-level motor P gains:
-  Kp_m1 = 0.9
-  Kp_m2 = 0.9
-
-  joints_m = np.array([qr, qp])
-
-  motors_m = np.array([Kp_m1 * leftLength, Kp_m2 * rightLength])
+  motors_m = np.array([Kp_m[0] * leftLength, Kp_m[1] * rightLength])
 
   Kp_j_joints = InvJj.transpose() @ Km  @ motors_m
 
+  # if (qr == 0.0):
+
+  #   Kp_j1 = 0.0
+
+  # else:
+
+  #   Kp_j1 = Kp_j_joints[0]/qr
+  
+  # if (qp == 0.0):
+
+  #   Kp_j2 = 0.0
+
+  # else:
+
+  #   Kp_j2 = Kp_j_joints[1]/qp
+
   if (qr == 0.0):
-
-    Kp_j1 = 0.0
-
-  else:
-
-    Kp_j1 = Kp_j_joints[0]/qr
-  
+     qr = -0.1
   if (qp == 0.0):
+     qp = -0.1
 
-    Kp_j2 = 0.0
+  Kp_j1 = Kp_j_joints[0]/qr   
+  Kp_j2 = Kp_j_joints[1]/qp
 
-  else:
-
-    Kp_j2 = Kp_j_joints[1]/qp
-  
   Kp_j = np.array([Kp_j1, Kp_j2])
 
   return Kp_j
@@ -307,77 +309,77 @@ def Motor_to_Joint_Pgains_Knee(Kp_m,  j,  Km, angle, cylinder_position):
 
 ##################################### Main #####################################
 
-# # Knee P
+# Knee P
 
-# # Suppose you have arrays Kp and Kd containing the PD gains of the motor level
+# Suppose you have arrays Kp and Kd containing the PD gains of the motor level
 
-# Kp_m_knee = 3.5
-# Kv_m_knee = 0.0003
+Kp_m_knee = 3.5
+Kv_m_knee = 0.0003
 
-# # Km for knee
-# Km_knee = 1000.0 * 2 * math.pi * 2 * 0.36
+# Km for knee
+Km_knee = 1000.0 * 2 * math.pi * 2 * 0.36
 
-# # cross knee settings
-# KNEE_P_A1 = np.array([0.0290, -0.0450]) #[m]
-# KNEE_P_A2 = np.array([0.0500,  0.0710]) #[m]
-# KNEE_P_B1 = np.array([0.0000, -0.0590]) #[m]
-# KNEE_P_B2 = np.array([0.0270,  0.0000]) #[m]
-# KNEE_P_C = np.array([0.0500,  0.2650]) #[m]
-# KNEE_P_INIT_LEN = 0.1941 #[m]
-# KNEE_P_MIN_LEN  = 0.1940 #[m]
-# KNEE_P_MAX_LEN  = 0.346398 #[m]
+# cross knee settings
+KNEE_P_A1 = np.array([0.0290, -0.0450]) #[m]
+KNEE_P_A2 = np.array([0.0500,  0.0710]) #[m]
+KNEE_P_B1 = np.array([0.0000, -0.0590]) #[m]
+KNEE_P_B2 = np.array([0.0270,  0.0000]) #[m]
+KNEE_P_C = np.array([0.0500,  0.2650]) #[m]
+KNEE_P_INIT_LEN = 0.1941 #[m]
+KNEE_P_MIN_LEN  = 0.1940 #[m]
+KNEE_P_MAX_LEN  = 0.346398 #[m]
 
-# # Joint range for the knee: 0<p<150, half-sitting is 36.0
+# Joint range for the knee: 0<p<150, half-sitting is 36.0
 
-# # Arrays for plotting:
+# Arrays for plotting:
 
-# joints_data = []
-# Kp_knee_data = []
-# Kv_knee_data = []
+joints_data = []
+Kp_knee_data = []
+Kv_knee_data = []
 
-# for i in np.arange(1.0, 150.0, 5.0):
+for i in np.arange(1.0, 150.0, 5.0):
 
-#     THP_knee = math.radians(i)
+    THP_knee = math.radians(i)
 
-#     #Cylinder position
-#     length = angleToCylinderCrossKnee(THP_knee,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C,KNEE_P_INIT_LEN,KNEE_P_MIN_LEN,KNEE_P_MAX_LEN)
+    #Cylinder position
+    length = angleToCylinderCrossKnee(THP_knee,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C,KNEE_P_INIT_LEN,KNEE_P_MIN_LEN,KNEE_P_MAX_LEN)
 
-#     #Jacobian
-#     j_knee = cylinderToAngleCrossKneeDot(length,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C)
+    #Jacobian
+    j_knee = cylinderToAngleCrossKneeDot(length,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C)
 
-#     # Calculating kp_j and Kv_j
-#     Kp_j_knee = Motor_to_Joint_Pgains_Knee(Kp_m_knee, j_knee, Km_knee, THP_knee, length)
+    # Calculating kp_j and Kv_j
+    Kp_j_knee = Motor_to_Joint_Pgains_Knee(Kp_m_knee, j_knee, Km_knee, THP_knee, length)
 
-#     Kv_j_knee = Motor_to_Joint_Dgains_Knee(Kv_m_knee, j_knee, Km_knee)
+    Kv_j_knee = Motor_to_Joint_Dgains_Knee(Kv_m_knee, j_knee, Km_knee)
 
-#     # print("Km:\n ", Km_knee)
-#     # print("Jacobian:\n ", j_knee)
-#     # print("Kv at the Knee P level:\n ", Kv_j_knee)
-#     # print("Kp at the Knee P level:\n ", Kp_j_knee)
+    # print("Km:\n ", Km_knee)
+    # print("Jacobian:\n ", j_knee)
+    # print("Kv at the Knee P level:\n ", Kv_j_knee)
+    # print("Kp at the Knee P level:\n ", Kp_j_knee)
 
-#     joints_data.append(i)
-#     Kp_knee_data.append(Kp_j_knee)
-#     Kv_knee_data.append(Kv_j_knee)
+    joints_data.append(i)
+    Kp_knee_data.append(Kp_j_knee)
+    Kv_knee_data.append(Kv_j_knee)
 
-# # Plots
+# Plots
 
-# plt.figure()
-# plt.plot(joints_data, Kp_knee_data, label = "P gains knee_P", c = 'blue')
-# plt.scatter(joints_data, Kp_knee_data, label = "P gains knee_P", c = 'red')
-# plt.xlabel("Knee Joint Position")
-# plt.ylabel("kp_j_knee_P")
-# plt.title("knee P joint level P gains as function of knee P joint positions")
-# plt.legend()
-# plt.grid()
+plt.figure()
+plt.plot(joints_data, Kp_knee_data, label = "P gains knee_P", c = 'blue')
+plt.scatter(joints_data, Kp_knee_data, label = "P gains knee_P", c = 'red')
+plt.xlabel("Knee Joint Position")
+plt.ylabel("kp_j_knee_P")
+plt.title("knee P joint level P gains as function of knee P joint positions")
+plt.legend()
+plt.grid()
 
-# plt.figure()
-# plt.plot(joints_data, Kv_knee_data, label = "D gains knee_P", c = 'blue')
-# plt.scatter(joints_data, Kv_knee_data, label = "D gains knee_P", c = 'red')
-# plt.xlabel("Knee Joint Position")
-# plt.ylabel("kv_j_knee_P")
-# plt.title("knee P joint level D gains as function of knee P joint positions")
-# plt.legend()
-# plt.grid()
+plt.figure()
+plt.plot(joints_data, Kv_knee_data, label = "D gains knee_P", c = 'blue')
+plt.scatter(joints_data, Kv_knee_data, label = "D gains knee_P", c = 'red')
+plt.xlabel("Knee Joint Position")
+plt.ylabel("kv_j_knee_P")
+plt.title("knee P joint level D gains as function of knee P joint positions")
+plt.legend()
+plt.grid()
 # plt.show()
 
 
@@ -385,8 +387,10 @@ def Motor_to_Joint_Pgains_Knee(Kp_m,  j,  Km, angle, cylinder_position):
 
 # Crotch P/R 
 
-# Defining Kv_m as a matrix
+# Defining element-level motor P gains:
+Kp_m_crotch = [0.95, 1.06]
 
+# Defining Kv_m as a matrix
 Kv_m_crotch = [[0.0002, 0], [0, 0.0002]]
 
 # Km for crotch
@@ -419,9 +423,9 @@ CROTCH_LTxLT = CROTCH_LT * CROTCH_LT
 CROTCH_LCxLC = CROTCH_LC * CROTCH_LC
 CROTCH_LCx2  = CROTCH_LC * 2.0
 
-# qp (pitch) and qr (roll), which should be used in the kr001_angle_to_cylinder_gimbal, which modifies drL and drR.
 # For the crotch: -110<p<30, -30<r<30
-# According to the AngleToCylinder.cpp code, qp is actually -pitch.
+# According to the AngleToCylinder.cpp, the kr001_angle_to_cylinder_gimbal (hence the jacobian too) take -qp (pitch) and qr (roll)
+# To calculate Kp, qp is used for the joint positions
 
 crotch_roll_data = []
 crotch_pitch_data = []
@@ -450,7 +454,7 @@ for i in np.arange(-110.0, 30.01, 10.0):
 
   # Calculating kp_j and Kv_j
 
-  Kp_j_crotch = Motor_to_Joint_Pgains(InvJj_crotch, Km_crotch, THR_crotch, qp, leftlength_crotch, rightlength_crotch)
+  Kp_j_crotch = Motor_to_Joint_Pgains(Kp_m_crotch, InvJj_crotch, Km_crotch, THR_crotch, qp, leftlength_crotch, rightlength_crotch)
   Kv_j_crotch = Motor_to_Joint_Dgains(Kv_m_crotch, InvJj_crotch, Km_crotch)
 
   # cnt = 0
@@ -470,7 +474,12 @@ for i in np.arange(-110.0, 30.01, 10.0):
   THR_crotch = THR_crotch + math.radians(4)
 
 # print("Kp at the Crotch R level:\n ", Kp_crotch_roll_data)
+# print("")
 # print("Kp at the Crotch P level:\n ", Kp_crotch_pitch_data)
+# print("\n")
+# print("Crotch R:\n ", crotch_roll_data)
+# print("")
+# print("Crotch P:\n ", crotch_pitch_data)
 # print("Kv at the Crotch R level:\n ", Kv_crotch_roll_data)
 # print("Kv at the Crotch P level:\n ", Kv_crotch_pitch_data)
 
@@ -510,6 +519,146 @@ ax.set_xlabel("Crotch_P Joint Position")
 ax.set_ylabel("Crotch_R Joint Position")
 ax.set_zlabel("Kv_j_crotch")
 ax.set_title("Crotch_P joint level P gains as function of Crotch_P/R joint positions")
+ax.legend()
+ax.grid()
+# plt.show()
+
+#--------------------------------------------------------------------------------------------------------------------------------
+
+# Ankle P/R 
+
+# Defining element-level motor P gains:
+Kp_m_ankle = [0.3, 0.3]
+
+# Defining Kv_m as a matrix
+Kv_m_ankle = [[0.0001, 0], [0, 0.0001]]
+
+# Km for ankle
+Km_ankle = np.array([[1000 * 2 * math.pi * 0.454545455, 0], [0 ,1000 * 2 * math.pi * 0.454545455]])
+
+# 15 double parameters: THR, THP, LT, LC, L1Y, L1Z, L2X, L2Y, L2Z, L3X, L3Z, LTxLT, LCxLC, LCx2, QOFF2
+
+# 股 P/R 
+
+gm_ankle = GimbalMethod.PITCH_ROLL
+
+ANKLE_ROD_MIN_LENGTH     = 0.24004 
+ANKLE_ROD_MAX_LENGTH     = 0.35480 
+ANKLE_ROD_DEFAULT_LENGTH = 0.288701
+ANKLE_R_DEFAULT_ANGLE   = math.radians(0.0)
+ANKLE_P_DEFAULT_ANGLE   = math.radians(0.0) 
+
+ANKLE_LT  =  0.08000 
+ANKLE_LC  =  0.07000 
+ANKLE_L1Y =  0.03700
+ANKLE_L1Z =  0.05000
+ANKLE_L2X =  0.04924
+ANKLE_L2Y =  0.03700
+ANKLE_L2Z = 0.00868
+ANKLE_L3X =  0.00000
+ANKLE_L3Z =  0.30000
+ANKLE_QOFF2 =  math.radians(0.0)
+
+ANKLE_LTxLT = ANKLE_LT * ANKLE_LT
+ANKLE_LCxLC = ANKLE_LC * ANKLE_LC
+ANKLE_LCx2  = ANKLE_LC * 2.0
+
+# For the ankle: -94<p<50, -32<r<32
+# According to the AngleToCylinder.cpp, the kr001_angle_to_cylinder_gimbal (hence the jacobian too) take -qp (pitch) and qr (roll)
+# To calculate Kp, qp is used for the joint positions
+
+ankle_roll_data = []
+ankle_pitch_data = []
+Kp_ankle_roll_data = []
+Kp_ankle_pitch_data = []
+Kv_ankle_roll_data = []
+Kv_ankle_pitch_data = []
+
+THR_ankle = math.radians(-32)
+
+for i in np.arange(-90.0, 50.01, 10.0):
+
+  qp = math.radians(i)
+  THP_ankle = -qp
+
+  leftlength_ankle, rightlength_ankle = kr001_angle_to_cylinder_gimbal(gm_ankle, THR_ankle, THP_ankle,
+                                ANKLE_LT, ANKLE_LC, ANKLE_L1Y, ANKLE_L1Z,
+                                ANKLE_L2X, ANKLE_L2Y, ANKLE_L2Z, ANKLE_L3X, ANKLE_L3Z,
+                                ANKLE_LTxLT, ANKLE_LCxLC, ANKLE_LCx2, ANKLE_QOFF2)
+
+
+  InvJj_ankle = Jacobian_MotorTorque_CylinderForce(gm_ankle,THR_ankle,THP_ankle,ANKLE_LT,ANKLE_LC,ANKLE_L1Y,ANKLE_L1Z,
+                                  ANKLE_L2X,ANKLE_L2Y,ANKLE_L2Z,ANKLE_L3X,ANKLE_L3Z,
+                                  ANKLE_LTxLT,ANKLE_LCxLC,ANKLE_LCx2,ANKLE_QOFF2)
+  
+
+  # Calculating kp_j and Kv_j
+
+  Kp_j_ankle = Motor_to_Joint_Pgains(Kp_m_ankle, InvJj_ankle, Km_ankle, THR_ankle, qp, leftlength_ankle, rightlength_ankle)
+  Kv_j_ankle = Motor_to_Joint_Dgains(Kv_m_ankle, InvJj_ankle, Km_ankle)
+
+  # cnt = 0
+  # for rows in Kv_j_ankle:
+  #  print(rows)
+  #  cnt+=1
+  #  if cnt%2 == 0:
+  #     print("")
+
+  ankle_pitch_data.append(i)
+  ankle_roll_data.append(math.degrees(THR_ankle))
+  Kp_ankle_roll_data.append(Kp_j_ankle[0])
+  Kp_ankle_pitch_data.append(Kp_j_ankle[1])
+  Kv_ankle_roll_data.append(Kv_j_ankle[0][0])
+  Kv_ankle_pitch_data.append(Kv_j_ankle[1][1])
+
+  THR_ankle = THR_ankle + math.radians(4.5)
+
+# print("Kp at the ankle R level:\n ", Kp_ankle_roll_data)
+# print("")
+# print("Kp at the ankle P level:\n ", Kp_ankle_pitch_data)
+# print("\n")
+# print("ankle R:\n ", ankle_roll_data)
+# print("")
+# print("ankle P:\n ", ankle_pitch_data)
+# print("Kv at the ankle R level:\n ", Kv_ankle_roll_data)
+# print("Kv at the ankle P level:\n ", Kv_ankle_pitch_data)
+
+# Plots
+
+# Simple 2D plot
+# plt.figure()
+# plt.plot(ankle_pitch_data, Kp_ankle_pitch_data, label = "P gains ankle_P", c = 'blue')
+# plt.scatter(ankle_pitch_data, Kp_ankle_pitch_data, label = "P gains ankle_P", c = 'red')
+# plt.xlabel("ankle_P Joint Position")
+# plt.ylabel("kp_j_ankle_P")
+# plt.title("ankle_P joint level P gains as function of ankle_P joint positions")
+# plt.legend()
+# plt.grid()
+# plt.show()
+
+fig3 = plt.figure()
+ax = fig3.add_subplot(111, projection = '3d')
+ax.scatter(np.array(ankle_pitch_data), np.array(ankle_roll_data), np.array(Kp_ankle_roll_data), c = 'orange', label = 'P gain for ankle_R')
+ax.plot(np.array(ankle_pitch_data), np.array(ankle_roll_data), np.array(Kp_ankle_roll_data), c = 'brown', label = 'P gain for ankle_R')
+ax.scatter(np.array(ankle_pitch_data), np.array(ankle_roll_data), np.array(Kp_ankle_pitch_data), c = 'red', label = 'P gain for ankle_P')
+ax.plot(np.array(ankle_pitch_data), np.array(ankle_roll_data), np.array(Kp_ankle_pitch_data), c = 'blue', label = 'P gain for ankle_P')
+ax.set_xlabel("ankle_P Joint Position")
+ax.set_ylabel("ankle_R Joint Position")
+ax.set_zlabel("kp_j_ankle")
+ax.set_title("ankle_P joint level P gains as function of ankle_P/R joint positions")
+ax.legend()
+ax.grid()
+
+fig4 = plt.figure()
+ax = fig4.add_subplot(111, projection = '3d')
+ax.scatter(np.array(ankle_pitch_data), np.array(ankle_roll_data), np.array(Kv_ankle_roll_data), c = 'orange', label = 'D gain for ankle_R')
+ax.plot(np.array(ankle_pitch_data), np.array(ankle_roll_data), np.array(Kv_ankle_roll_data), c = 'brown', label = 'D gain for ankle_R')
+ax.scatter(np.array(ankle_pitch_data), np.array(ankle_roll_data), np.array(Kv_ankle_pitch_data), c = 'red', label = 'D gain for ankle_P')
+ax.plot(np.array(ankle_pitch_data), np.array(ankle_roll_data), np.array(Kv_ankle_pitch_data), c = 'blue', label = 'D gain for ankle_P')
+ax.set_xlabel("ankle_P Joint Position")
+ax.set_ylabel("ankle_R Joint Position")
+ax.set_zlabel("Kv_j_ankle")
+ax.set_title("ankle_P joint level P gains as function of ankle_P/R joint positions")
 ax.legend()
 ax.grid()
 plt.show()
