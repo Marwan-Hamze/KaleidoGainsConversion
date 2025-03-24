@@ -27,14 +27,14 @@ class GimbalMethod(Enum):
     PITCH_ROLL = 0
     ROLL_PITCH = 1
 
-# Define a function that converts a angle (joint) to cylinder position
+# Define a function that converts an angle (joint) to cylinder position (motor)
 
 def kr001_angle_to_cylinder_gimbal(GimbalMethod, qr, qp, LT, LC, L1Y, L1Z, L2X, L2Y, L2Z, L3X, L3Z, LTxLT,LCxLC, LCx2, QOFF2):
 
     cqp = math.cos(qp)
     sqp = math.sin(qp)
     cqr = math.cos(qr)
-    sqr = math.cos(qr)
+    sqr = math.sin(qr)
 
     cqpL2X = cqp * L2X
     sqpL2X = sqp * L2X
@@ -313,11 +313,11 @@ def Motor_to_Joint_Pgains_Knee(Kp_m,  j,  Km, angle, cylinder_position):
 
 # Suppose you have arrays Kp and Kd containing the PD gains of the motor level
 
-Kp_m_knee = 3.5
-Kv_m_knee = 0.0003
+Kp_m_knee = 0.2
+Kv_m_knee = 0.00003
 
 # Km for knee
-Km_knee = 1000.0 * 2 * math.pi * 2 * 0.36
+Km_knee = 1000.0 * 2 * math.pi * 2 * 1/0.36
 
 # cross knee settings
 KNEE_P_A1 = np.array([0.0290, -0.0450]) #[m]
@@ -347,6 +347,10 @@ for i in np.arange(1.0, 150.0, 5.0):
     #Jacobian
     j_knee = cylinderToAngleCrossKneeDot(length,KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C)
 
+    # Angle check using cylinderToAngleCrossKnee
+    # angle = cylinderToAngleCrossKnee(length, KNEE_P_A1,KNEE_P_A2,KNEE_P_B1,KNEE_P_B2,KNEE_P_C)
+    # print(math.degrees(angle))
+
     # Calculating kp_j and Kv_j
     Kp_j_knee = Motor_to_Joint_Pgains_Knee(Kp_m_knee, j_knee, Km_knee, THP_knee, length)
 
@@ -360,6 +364,8 @@ for i in np.arange(1.0, 150.0, 5.0):
     joints_data.append(i)
     Kp_knee_data.append(Kp_j_knee)
     Kv_knee_data.append(Kv_j_knee)
+
+# print("Knee P gains: ", Kp_knee_data)
 
 # Plots
 
@@ -388,13 +394,14 @@ plt.grid()
 # Crotch P/R 
 
 # Defining element-level motor P gains:
-Kp_m_crotch = [0.95, 1.06]
+# Kp_m_crotch = [0.095, 2.06]
+Kp_m_crotch = [0.0008, 0.25]
 
 # Defining Kv_m as a matrix
 Kv_m_crotch = [[0.0002, 0], [0, 0.0002]]
 
 # Km for crotch
-Km_crotch = np.array([[1000 * 2 * math.pi * 0.454545455, 0], [0 ,1000 * 2 * math.pi * 0.454545455]])
+Km_crotch = np.array([[1000 * 2 * math.pi * 1/0.454545455, 0], [0 ,1000 * 2 * math.pi * 1/0.454545455]])
 
 # 15 double parameters: THR, THP, LT, LC, L1Y, L1Z, L2X, L2Y, L2Z, L3X, L3Z, LTxLT, LCxLC, LCx2, QOFF2
 
@@ -528,13 +535,13 @@ ax.grid()
 # Ankle P/R 
 
 # Defining element-level motor P gains:
-Kp_m_ankle = [0.3, 0.3]
+Kp_m_ankle = [0.04, 0.05]
 
 # Defining Kv_m as a matrix
-Kv_m_ankle = [[0.0001, 0], [0, 0.0001]]
+Kv_m_ankle = [[0.00001, 0], [0, 0.00001]]
 
 # Km for ankle
-Km_ankle = np.array([[1000 * 2 * math.pi * 0.454545455, 0], [0 ,1000 * 2 * math.pi * 0.454545455]])
+Km_ankle = np.array([[1000 * 2 * math.pi * 1/0.454545455, 0], [0 ,1000 * 2 * math.pi * 1/0.454545455]])
 
 # 15 double parameters: THR, THP, LT, LC, L1Y, L1Z, L2X, L2Y, L2Z, L3X, L3Z, LTxLT, LCxLC, LCx2, QOFF2
 
@@ -594,7 +601,7 @@ for i in np.arange(-90.0, 50.01, 10.0):
 
   # Calculating kp_j and Kv_j
 
-  Kp_j_ankle = Motor_to_Joint_Pgains(Kp_m_ankle, InvJj_ankle, Km_ankle, THR_ankle, qp, leftlength_ankle, rightlength_ankle)
+  Kp_j_ankle = Motor_to_Joint_Pgains(Kp_m_ankle, InvJj_ankle, Km_ankle, THR_ankle, qp, rightlength_ankle, leftlength_ankle)
   Kv_j_ankle = Motor_to_Joint_Dgains(Kv_m_ankle, InvJj_ankle, Km_ankle)
 
   # cnt = 0
@@ -621,6 +628,7 @@ for i in np.arange(-90.0, 50.01, 10.0):
 # print("")
 # print("ankle P:\n ", ankle_pitch_data)
 # print("Kv at the ankle R level:\n ", Kv_ankle_roll_data)
+# print("")
 # print("Kv at the ankle P level:\n ", Kv_ankle_pitch_data)
 
 # Plots
